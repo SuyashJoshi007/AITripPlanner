@@ -55,7 +55,6 @@ function Header() {
       <div className="flex items-center gap-2">
         <img src="/logo.png" alt="App Logo" className="w-15 h-auto" />
         <img src="/text.png" alt="App Logo" className="w-40 h-auto" />
-
       </div>
       <div>
         {user ? (
@@ -63,7 +62,7 @@ function Header() {
             <a href="/my-trips">
               <Button
                 variant="outline"
-                className="round hover:scale-105 transition-transform duration-200"
+                className="round hover:scale-105 transition-transform duration-200 cursor-pointer"
               >
                 My Trips
               </Button>
@@ -94,22 +93,33 @@ function Header() {
           </div>
         ) : (
           <>
-            <Button onClick={() => setOpenDialog(true)}>Sign In</Button>
+            <Button className="cursor-pointer" onClick={() => setOpenDialog(true) }>Sign In</Button>
             <Dialog open={openDialog} onOpenChange={setOpenDialog}>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Sign In</DialogTitle>
+                  <DialogTitle></DialogTitle>
                   <DialogDescription>
-                    <img src="/logo.svg" alt="Logo" />
-                    <h2 className="font-bold text-lg mt-7">
+                    <div>
+                      <img
+                        src="/logo.png"
+                        alt="App Logo"
+                        className="w-15 h-auto"
+                      />
+                      <img
+                        src="/text.png"
+                        alt="App Logo"
+                        className="w-20 h-auto"
+                      />
+                    </div>
+                    <h2 className="font-bold text-lg mt-2">
                       Sign In With Google
                     </h2>
                     Sign in to Google authentication securely
                     <Button
                       onClick={() => login()}
-                      className="w-full mt-5 flex gap-4 items-center"
+                      className="w-full mt-5 flex gap-4 items-center cursor-pointer"
                     >
-                      <FcGoogle className="h-7 w-7" />
+                      <FcGoogle className="h-7 w-7 " />
                       Sign In With Google
                     </Button>
                   </DialogDescription>
