@@ -26,7 +26,7 @@ function Header() {
   }, [user]);
 
   useEffect(() => {
-    setErr(""); // clear any past error when user state changes
+    setErr("");
   }, [user]);
 
   async function GetUserProfile(tokenResponse) {
@@ -53,7 +53,6 @@ function Header() {
     onSuccess: (tokenResponse) => GetUserProfile(tokenResponse),
     onError: () => setErr("Google sign-in popup was closed or blocked."),
     flow: "implicit",
-    // ux_mode: "popup" // default; uncomment if you changed it elsewhere
   });
 
   return (
@@ -67,13 +66,22 @@ function Header() {
         relative
       "
     >
-      {/* gradient + noise strip */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(120%_60%_at_10%_-40%,rgba(245,101,81,0.20),rgba(255,255,255,0)_60%),radial-gradient(80%_50%_at_90%_-30%,rgba(6,182,212,0.15),rgba(255,255,255,0)_65%)]" />
-        <div className="absolute inset-0 mix-blend-multiply opacity-[0.04] [background-image:url('https://grainy-gradients.vercel.app/noise.svg')]" />
+      {/* gradient + noise strip (use inline style to avoid Tailwind arbitrary parsing issues) */}
+      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(120% 60% at 10% -40%, rgba(245,101,81,0.20), rgba(255,255,255,0) 60%), radial-gradient(80% 50% at 90% -30%, rgba(6,182,212,0.15), rgba(255,255,255,0) 65%)",
+          }}
+        />
+        <div
+          className="absolute inset-0 mix-blend-multiply opacity-10"
+          style={{ backgroundImage: "url('https://grainy-gradients.vercel.app/noise.svg')" }}
+        />
       </div>
 
-      <div className="mx-auto flex h-16 items-center justify-between gap-3 px-3 sm:h-18 sm:px-5 lg:max-w-7xl">
+      <div className="mx-auto flex h-16 items-center justify-between gap-3 px-3 sm:h-16 md:h-20 sm:px-5 lg:max-w-7xl">
         {/* Brand */}
         <Link
           to="/"
@@ -187,11 +195,10 @@ function Header() {
               </Button>
 
               <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-                <DialogContent className="max-w-md rounded-2xl border border-white/60 bg-white/85 p-0 backdrop-blur-md dark:border-white/10 dark:bg-white/10">
+                <DialogContent className="max-w-md rounded-2xl border border-white/60 bg-white/80 p-0 backdrop-blur-md dark:border-white/10 dark:bg-white/10">
                   <DialogHeader className="p-0">
                     <DialogTitle className="sr-only">Sign in</DialogTitle>
                     <DialogDescription asChild>
-                      {/* Card body */}
                       <div className="flex flex-col gap-0">
                         {/* Header strip */}
                         <div className="flex items-center justify-between gap-3 rounded-t-2xl border-b border-white/60 bg-gradient-to-r from-[#fff7f6] to-white px-5 py-4 dark:from-white/5 dark:to-white/10">
@@ -210,7 +217,6 @@ function Header() {
                             Sign in to sync your trips across devices and unlock smart suggestions.
                           </p>
 
-                          {/* Benefits */}
                           <ul className="mt-3 space-y-1.5 text-sm text-gray-700 dark:text-gray-200">
                             <li className="flex items-start gap-2">
                               <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[#f56551]" />
@@ -226,7 +232,6 @@ function Header() {
                             </li>
                           </ul>
 
-                          {/* Divider */}
                           <div className="my-4 flex items-center gap-3">
                             <span className="h-px flex-1 bg-gray-200 dark:bg-white/20" />
                             <span className="text-[11px] uppercase tracking-wider text-gray-400">
@@ -235,7 +240,6 @@ function Header() {
                             <span className="h-px flex-1 bg-gray-200 dark:bg-white/20" />
                           </div>
 
-                          {/* Google-branded button */}
                           <Button
                             disabled={isBusy}
                             onClick={() => login()}
@@ -273,14 +277,12 @@ function Header() {
                             )}
                           </Button>
 
-                          {/* Error message */}
                           {err && (
                             <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
                               {err}
                             </div>
                           )}
 
-                          {/* Secondary actions */}
                           <div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
                             <p className="text-[11px] text-gray-500 dark:text-gray-400">
                               By continuing, you agree to our{" "}
