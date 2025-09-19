@@ -1,21 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { db } from "@/service/fireBaseConfig";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
-import {
-  ArrowRight,
-  MapPin,
-  DollarSign,
-  Clock,
-  Trash2,
-} from "lucide-react";
+import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { ArrowRight, MapPin, DollarSign, Clock, Trash2, Plus } from "lucide-react";
 
 import {
   AlertDialog,
@@ -29,124 +16,190 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 
+function TripCardSkeleton() {
+  return (
+    <div className="rounded-xl border bg-white p-6 shadow-sm">
+      <div className="h-2 w-full bg-gray-100 rounded" />
+      <div className="mt-3 h-2 w-2/3 bg-gray-100 rounded" />
+      <div className="mt-3 h-2 w-1/2 bg-gray-100 rounded" />
+      <div className="mt-4 h-8 w-24 bg-gray-100 rounded" />
+    </div>
+  );
+}
+
 function MyTrips() {
   const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  const user = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"));
+    } catch {
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     async function fetchTrips() {
-      const user = JSON.parse(localStorage.getItem("user"));
       if (!user) {
         navigate("/");
         return;
       }
-
-      const q = query(
-        collection(db, "AITrips"),
-        where("userEmail", "==", user.email)
-      );
-      const querySnapshot = await getDocs(q);
-
-      const tripsData = [];
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        tripsData.push({
-          id: docSnap.id,
-          budget: data.tripData?.travelPlan?.budget || "N/A",
-          duration: data.tripData?.travelPlan?.duration || "N/A",
-          city: data.tripData?.travelPlan?.locationDetails?.city || "N/A",
+      setLoading(true);
+      try {
+        const q = query(collection(db, "AITrips"), where("userEmail", "==", user.email));
+        const snap = await getDocs(q);
+        const rows = [];
+        snap.forEach((docSnap) => {
+          const data = docSnap.data();
+          rows.push({
+            id: docSnap.id,
+            budget: data?.tripData?.travelPlan?.budget || "N/A",
+            duration: data?.tripData?.travelPlan?.duration || "N/A",
+            city: data?.tripData?.travelPlan?.locationDetails?.city || "N/A",
+          });
         });
-      });
-      setTrips(tripsData);
+        setTrips(rows);
+      } catch (e) {
+        console.error("Failed to fetch trips:", e);
+      } finally {
+        setLoading(false);
+      }
     }
-
     fetchTrips();
-  }, [navigate]);
+  }, [navigate, user]);
 
-  const handleViewTrip = (tripId) => {
-    navigate(`/view-trip/${tripId}`);
-  };
+  const handleViewTrip = (id) => navigate(`/view-trip/${id}`);
 
-  const handleDeleteTrip = async (tripId) => {
+  const handleDeleteTrip = async (id) => {
     try {
-      await deleteDoc(doc(db, "AITrips", tripId));
-      setTrips((prev) => prev.filter((trip) => trip.id !== tripId));
-    } catch (error) {
-      console.error("Error deleting trip:", error);
+      await deleteDoc(doc(db, "AITrips", id));
+      setTrips((prev) => prev.filter((t) => t.id !== id));
+    } catch (e) {
+      console.error("Delete failed:", e);
     }
   };
 
   return (
-    <div className="w-full flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
-      <h1 className="text-3xl font-bold mb-8">My Previous Trips</h1>
-
-      {trips.length === 0 ? (
-        <p className="text-gray-500">No trips found.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-7xl">
-          {trips.map((trip) => (
-            <div
-              key={trip.id}
-              className="group relative border rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition duration-300 cursor-pointer hover:scale-[1.01] transform"
-            >
-              {/* Full-card redirect */}
-              <div
-                onClick={() => handleViewTrip(trip.id)}
-                className="absolute inset-0 z-10"
-              />
-
-              {/* Arrow icon */}
-              <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
-                <ArrowRight size={18} className="text-gray-600" />
-              </div>
-
-              <div className="relative z-20 space-y-2">
-                <p className="flex items-center gap-2 text-gray-700">
-                  <MapPin size={16} />{" "}
-                  <span className="text-gray-900">{trip.city}</span>
-                </p>
-                <p className="flex items-center gap-2 text-gray-700">
-                  <DollarSign size={16} />{" "}
-                  <span className="text-gray-900">{trip.budget}</span>
-                </p>
-                <p className="flex items-center gap-2 text-gray-700">
-                  <Clock size={16} />{" "}
-                  <span className="text-gray-900">{trip.duration}</span>
-                </p>
-
-                {/* Delete with confirmation */}
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <button
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-1 text-red-500 text-sm mt-2 hover:underline hover:text-red-600 transition"
-                    >
-                      <Trash2 size={16} /> Delete
-                    </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will permanently delete your trip.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleDeleteTrip(trip.id)}
-                        className="bg-red-500 hover:bg-red-600"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-          ))}
+    <div className="min-h-screen w-full overflow-x-clip bg-gray-50">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">My Trips</h1>
+            <p className="text-sm text-gray-600">
+              Revisit your AI-crafted itineraries or start a new one.
+            </p>
+          </div>
+          <Link
+            to="/create-trip"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#f56551] px-4 py-2 text-white transition hover:bg-[#e25744]"
+          >
+            <Plus className="h-4 w-4" />
+            Create trip
+          </Link>
         </div>
-      )}
+
+        {/* Content */}
+        {loading ? (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <TripCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : trips.length === 0 ? (
+          <div className="mt-10 grid place-items-center">
+            <div className="max-w-md rounded-xl border bg-white p-8 text-center shadow-sm">
+              <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-gray-100" />
+              <h2 className="text-xl font-semibold">No trips yet</h2>
+              <p className="mt-1 text-gray-600">
+                When you generate an itinerary, it will show up here.
+              </p>
+              <Link
+                to="/create-trip"
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#f56551] px-4 py-2 text-white transition hover:bg-[#e25744]"
+              >
+                <Plus className="h-4 w-4" />
+                Plan your first trip
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {trips.map((trip) => (
+              <div
+                key={trip.id}
+                className="group relative overflow-hidden rounded-xl border bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                {/* Arrow on hover */}
+                <div className="absolute right-3 top-3 z-20 opacity-0 transition-opacity group-hover:opacity-100">
+                  <ArrowRight size={18} className="text-gray-600" />
+                </div>
+
+                {/* Click-through overlay */}
+                <button
+                  onClick={() => handleViewTrip(trip.id)}
+                  className="absolute inset-0 z-10"
+                  aria-label={`Open trip ${trip.city}`}
+                  title="Open"
+                />
+
+                {/* Content */}
+                <div className="relative z-20 space-y-4">
+                  <div className="inline-flex max-w-full items-center gap-2 rounded-full border px-3 py-1 text-sm">
+                    <MapPin className="h-4 w-4 text-[#f56551]" />
+                    <span className="truncate font-semibold">{trip.city}</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2 text-sm">
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <DollarSign className="h-4 w-4" />
+                      <span className="font-medium">{trip.budget}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <Clock className="h-4 w-4" />
+                      <span className="font-medium">{trip.duration}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-xs text-gray-500">Click card to view details</span>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-600 transition hover:bg-red-100"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Delete
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this trip?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. Your itinerary will be permanently removed.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteTrip(trip.id)}
+                            className="bg-red-500 hover:bg-red-600"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

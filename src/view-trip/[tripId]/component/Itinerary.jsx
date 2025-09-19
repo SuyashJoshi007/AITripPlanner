@@ -1,81 +1,149 @@
 import React from "react";
-import { Clock, Ticket } from "lucide-react";
+import { Clock, Ticket, MapPin } from "lucide-react";
 
 function Itinerary({ trip }) {
   const itinerary = trip?.tripData?.travelPlan?.suggestedItinerary || [];
+  if (!Array.isArray(itinerary) || itinerary.length === 0) return null;
 
-  if (!itinerary.length) return null;
+  const mapsUrl = (q) =>
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q || "")}`;
 
-  const getGoogleMapsUrl = (placeName) =>
-    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      placeName
-    )}`;
+  const fallbackImg =
+    "https://dummyimage.com/400x260/e5e7eb/111827.png&text=See+on+Maps";
 
   return (
-    <div className="mt-10">
-      <h2 className="text-2xl font-bold mb-6">Places to Visit</h2>
+    <section aria-labelledby="itinerary-title" className="mt-10 w-full">
+      <header className="mb-7">
+        <h2 id="itinerary-title" className="text-2xl md:text-3xl font-extrabold tracking-tight">
+          Places to Visit
+        </h2>
+        <p className="mt-1 text-sm text-gray-600">
+          Tap any card to open it in Google Maps.
+        </p>
+      </header>
 
-      {itinerary.map((dayItem, dayIndex) => (
-        <div key={dayIndex} className="mb-10">
-          <h3 className="text-xl font-semibold mb-6">Day {dayItem.day}</h3>
+      <div className="space-y-12">
+        {itinerary.map((dayItem, dayIdx) => {
+          const dayNumber = dayItem?.day ?? dayIdx + 1;
+          const acts = Array.isArray(dayItem?.activities) ? dayItem.activities : [];
+          if (acts.length === 0) return null;
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {dayItem.activities.map((activity, index) => (
-              <a
-                key={index}
-                href={getGoogleMapsUrl(activity.placeName)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-xl border p-4 shadow-sm hover:shadow-md transition-transform transform hover:scale-[1.02] hover:bg-gray-50"
-              >
-                {/* Time */}
-                <p className="text-sm text-orange-600 font-semibold mb-2">
-                  {activity.startTime || `${10 + index * 2}:00 AM`}
-                </p>
+          return (
+            <section
+              key={dayIdx}
+              aria-labelledby={`day-${dayNumber}-title`}
+              className="relative"
+            >
+              {/* Day header chip (sticky on lg for quick context) */}
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/80 px-4 py-1.5 text-sm shadow-sm backdrop-blur-md lg:sticky lg:top-20">
+                <span className="inline-block h-2 w-2 rounded-full bg-[#f56551]" />
+                <h3 id={`day-${dayNumber}-title`} className="font-semibold">
+                  Day {dayNumber}
+                </h3>
+              </div>
 
-                <div className="flex gap-4">
-                  {/* Image */}
-                  <img
-                    src={ "https://plus.unsplash.com/premium_photo-1671620314206-03ad720f203e?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDIyfEZ6bzN6dU9ITjZ3fHxlbnwwfHx8fHw%3D"
-                    }
-                    alt={activity.placeName}
-                    className="w-28 h-28 object-cover rounded-md flex-shrink-0"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src =
-                        "https://dummyimage.com/200x140/ccc/000&text=No+Image";
-                    }}
-                  />
+              {/* Vertical rail (timeline) */}
+              <div className="relative pl-5 sm:pl-6">
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute left-2 top-0 h-full w-px bg-gradient-to-b from-[#f56551]/30 via-gray-200 to-transparent sm:left-2.5"
+                />
 
-                  {/* Content */}
-                  <div className="flex flex-col justify-between w-full">
-                    <div>
-                      <h4 className="font-semibold text-lg">
-                        {activity.placeName}
-                      </h4>
-                      <p className="text-gray-500 text-sm mb-2">
-                        {activity.placeDescription}
-                      </p>
-                    </div>
+                <ul className="space-y-5">
+                  {acts.map((activity, i) => {
+                    const title = activity?.placeName || "Point of Interest";
+                    const desc = activity?.placeDescription || "Explore this attraction.";
+                    const start = activity?.startTime || `${Math.max(9, 9 + i * 2)}:00`;
+                    const duration = activity?.duration || "2 hours";
+                    const ticket = activity?.ticketPrice || "Varies";
+                    const img = activity?.image || activity?.thumbnail || null;
 
-                    <div className="flex items-center gap-4 text-sm text-gray-700 mt-2">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {activity.duration || "2 hours"}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Ticket className="w-4 h-4 text-pink-500" />
-                        {activity.ticketPrice || "Varies"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
+                    return (
+                      <li key={`${title}-${i}`} className="relative">
+                        {/* Rail node */}
+                        <div className="absolute left-0 top-3 h-3 w-3 -translate-x-1/2 rounded-full border-2 border-white bg-gradient-to-br from-[#f56551] to-[#fb923c] shadow-sm sm:left-0.5" />
+
+                        {/* Card */}
+                        <a
+                          href={mapsUrl(title)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={[
+                            "block rounded-2xl border border-white/60 bg-white/80 shadow-sm backdrop-blur-md",
+                            "transition hover:-translate-y-0.5 hover:shadow-md",
+                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f56551]/50",
+                          ].join(" ")}
+                        >
+                          {/* Accent line */}
+                          <div className="h-[3px] w-full rounded-t-2xl bg-gradient-to-r from-[#f56551] via-[#fb923c] to-[#06b6d4]" />
+
+                          <div className="p-4 sm:p-5">
+                            {/* Top row: time + small maps chip */}
+                            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                              <span className="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-0.5 font-medium text-orange-700">
+                                {start}
+                              </span>
+                              <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-gray-700">
+                                <MapPin className="h-3.5 w-3.5" />
+                                Open in Maps
+                              </span>
+                            </div>
+
+                            <div className="flex gap-4">
+                              {/* Image */}
+                              <div className="relative">
+                                <img
+                                  src={
+                                    img ||
+                                    "https://images.unsplash.com/photo-1526779259212-939e64788e3c?w=640&auto=format&fit=crop&q=60"
+                                  }
+                                  alt={title}
+                                  className="h-28 w-28 flex-shrink-0 rounded-lg object-cover sm:h-32 sm:w-40"
+                                  onError={(e) => {
+                                    e.currentTarget.src = fallbackImg;
+                                  }}
+                                  loading="lazy"
+                                  decoding="async"
+                                />
+                                {/* soft ring */}
+                                <div className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-white/50" />
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex min-w-0 flex-1 flex-col justify-between">
+                                <div>
+                                  <h4 className="truncate text-base font-semibold sm:text-lg">
+                                    {title}
+                                  </h4>
+                                  <p className="mt-1 text-sm text-gray-600 line-clamp-3">
+                                    {desc}
+                                  </p>
+                                </div>
+
+                                <div className="mt-3 flex flex-wrap items-center gap-3 text-xs sm:text-sm">
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-gray-700">
+                                    <Clock className="h-3.5 w-3.5" />
+                                    {duration}
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-pink-200 bg-pink-50 px-2.5 py-0.5 text-pink-700">
+                                    <Ticket className="h-3.5 w-3.5" />
+                                    {ticket}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
