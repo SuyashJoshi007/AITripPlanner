@@ -63,7 +63,6 @@ function Header() {
         border-b border-white/50 dark:border-white/10
         bg-white/60 dark:bg-white/10
         shadow-[0_2px_20px_rgba(0,0,0,0.06)]
-        relative
       "
     >
       {/* gradient + noise strip (use inline style to avoid Tailwind arbitrary parsing issues) */}
@@ -89,7 +88,7 @@ function Header() {
           aria-label="Nomadic Nest home"
         >
           <img src="/logo.svg" alt="" className="h-9 w-9" />
-          <h1 className="text-sm font-semibold opacity-90 transition group-hover:opacity-100">
+          <h1 className="text-3xl font-semibold opacity-90 transition group-hover:opacity-100 text-grey-700 dark:text-gray-100">
             Nomadic Nest
           </h1>
         </Link>
