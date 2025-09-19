@@ -81,6 +81,14 @@ function MyTrips() {
     }
   };
 
+  // keyboard helper
+  const onCardKeyDown = (e, id) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleViewTrip(id);
+    }
+  };
+
   return (
     <div className="min-h-screen w-full overflow-x-clip bg-gray-50">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
@@ -88,9 +96,7 @@ function MyTrips() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">My Trips</h1>
-            <p className="text-sm text-gray-600">
-              Revisit your AI-crafted itineraries or start a new one.
-            </p>
+            <p className="text-sm text-gray-600">Revisit your AI-crafted itineraries or start a new one.</p>
           </div>
           <Link
             to="/create-trip"
@@ -113,9 +119,7 @@ function MyTrips() {
             <div className="max-w-md rounded-xl border bg-white p-8 text-center shadow-sm">
               <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-gray-100" />
               <h2 className="text-xl font-semibold">No trips yet</h2>
-              <p className="mt-1 text-gray-600">
-                When you generate an itinerary, it will show up here.
-              </p>
+              <p className="mt-1 text-gray-600">When you generate an itinerary, it will show up here.</p>
               <Link
                 to="/create-trip"
                 className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#f56551] px-4 py-2 text-white transition hover:bg-[#e25744]"
@@ -130,23 +134,20 @@ function MyTrips() {
             {trips.map((trip) => (
               <div
                 key={trip.id}
-                className="group relative overflow-hidden rounded-xl border bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                role="button"
+                tabIndex={0}
+                title="Open itinerary"
+                onClick={() => handleViewTrip(trip.id)}
+                onKeyDown={(e) => onCardKeyDown(e, trip.id)}
+                className="group relative cursor-pointer overflow-hidden rounded-xl border bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f56551]/50"
               >
                 {/* Arrow on hover */}
                 <div className="absolute right-3 top-3 z-20 opacity-0 transition-opacity group-hover:opacity-100">
                   <ArrowRight size={18} className="text-gray-600" />
                 </div>
 
-                {/* Click-through overlay */}
-                <button
-                  onClick={() => handleViewTrip(trip.id)}
-                  className="absolute inset-0 z-10"
-                  aria-label={`Open trip ${trip.city}`}
-                  title="Open"
-                />
-
                 {/* Content */}
-                <div className="relative z-20 space-y-4">
+                <div className="relative z-10 space-y-4">
                   <div className="inline-flex max-w-full items-center gap-2 rounded-full border px-3 py-1 text-sm">
                     <MapPin className="h-4 w-4 text-[#f56551]" />
                     <span className="truncate font-semibold">{trip.city}</span>
@@ -165,17 +166,28 @@ function MyTrips() {
 
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-xs text-gray-500">Click card to view details</span>
+
+                    {/* Delete with confirmation — prevent card navigation */}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <button
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                          }}
                           className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-600 transition hover:bg-red-100"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                           Delete
                         </button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+
+                      <AlertDialogContent
+                        onClick={(e) => e.stopPropagation()}
+                        className="max-w-md"
+                      >
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete this trip?</AlertDialogTitle>
                           <AlertDialogDescription>
