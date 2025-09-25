@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { FcGoogle } from "react-icons/fc";
 import { Link } from "react-router-dom";
 
-function Header() {
+export default function Header() {
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem("user");
@@ -18,6 +18,7 @@ function Header() {
   const [openDialog, setOpenDialog] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [scrolled, setScrolled] = useState(false);
 
   const initials = useMemo(() => {
     if (!user || !user.name) return "U";
@@ -28,6 +29,13 @@ function Header() {
   useEffect(() => {
     setErr("");
   }, [user]);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   async function GetUserProfile(tokenResponse) {
     setIsBusy(true);
@@ -57,15 +65,18 @@ function Header() {
 
   return (
     <header
-      className="
-        sticky top-0 z-50 w-full
-        backdrop-blur-md
-        border-b border-white/50 dark:border-white/10
-        bg-white/60 dark:bg-white/10
-        shadow-[0_2px_20px_rgba(0,0,0,0.06)]
-      "
+      className={[
+        "sticky top-0 z-50 w-full",
+        "backdrop-blur-md",
+        "border-b border-transparent",
+        "bg-white/60 dark:bg-white/10",
+        "transition-shadow",
+        scrolled
+          ? "shadow-[0_6px_30px_-10px_rgba(0,0,0,0.2)] ring-1 ring-black/5 dark:ring-white/10"
+          : "shadow-[0_2px_20px_rgba(0,0,0,0.06)]",
+      ].join(" ")}
+      role="banner"
     >
-      {/* gradient + noise strip (use inline style to avoid Tailwind arbitrary parsing issues) */}
       <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
         <div
           className="absolute inset-0"
@@ -78,22 +89,34 @@ function Header() {
           className="absolute inset-0 mix-blend-multiply opacity-10"
           style={{ backgroundImage: "url('https://grainy-gradients.vercel.app/noise.svg')" }}
         />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-[#f56551]/40 via-transparent to-[#06b6d4]/40" />
       </div>
 
       <div className="mx-auto flex h-16 items-center justify-between gap-3 px-3 sm:h-16 md:h-20 sm:px-5 lg:max-w-7xl">
-        {/* Brand */}
         <Link
           to="/"
-          className="group flex items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-white/50 dark:hover:bg-white/5"
+          className="group flex min-w-0 items-center gap-3 rounded-xl px-2 py-1 transition hover:bg-white/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f56551]/50 dark:hover:bg-white/5"
           aria-label="Nomadic Nest home"
         >
-          <img src="/logo.svg" alt="" className="h-9 w-9" />
-          <h1 className="text-3xl font-semibold opacity-90 transition group-hover:opacity-100 text-grey-700 dark:text-gray-100">
+          <span className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-2xl bg-white/70 shadow-sm ring-1 ring-black/5 backdrop-blur md:h-12 md:w-12 dark:bg-white/10 dark:ring-white/10">
+            <img
+              src="/logo.svg"
+              alt="Nomadic Nest logo"
+              className="h-6 w-6 md:h-7 md:w-7 select-none"
+              draggable={false}
+            />
+            <span className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/60 dark:ring-white/10" />
+            <span className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-br from-[#f56551]/30 to-[#06b6d4]/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          </span>
+
+          <h1
+            className="truncate bg-gradient-to-br from-gray-800 to-gray-500 bg-clip-text font-semibold text-transparent opacity-90 transition group-hover:opacity-100 dark:from-gray-100 dark:to-gray-300"
+            style={{ fontSize: "clamp(1.1rem, 2.5vw, 2rem)" }}
+          >
             Nomadic Nest
           </h1>
         </Link>
 
-        {/* Right cluster */}
         <div className="flex items-center gap-2 sm:gap-3">
           <Link to="/create-trip" className="hidden sm:block">
             <Button
@@ -120,7 +143,7 @@ function Header() {
                 <PopoverTrigger asChild>
                   <button
                     aria-label="Account menu"
-                    className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-white/70 bg-white/70 text-sm font-semibold text-gray-700 shadow-sm backdrop-blur-md transition hover:shadow dark:border-white/10 dark:bg-white/10 dark:text-gray-200"
+                    className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-2xl border border-white/70 bg-white/70 text-sm font-semibold text-gray-700 shadow-sm backdrop-blur-md transition hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#06b6d4]/50 md:h-11 md:w-11 dark:border-white/10 dark:bg-white/10 dark:text-gray-200"
                   >
                     {user.picture ? (
                       <img
@@ -128,47 +151,51 @@ function Header() {
                         alt={user.name || "User"}
                         className="h-full w-full object-cover"
                         referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
                       />
                     ) : (
                       <span>{initials}</span>
                     )}
+                    <span className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/60 transition dark:ring-white/10 group-hover:ring-[#06b6d4]/40" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
                   align="end"
-                  className="w-56 rounded-2xl border border-white/70 bg-white/80 p-3 shadow-lg backdrop-blur-md dark:border-white/10 dark:bg-white/10"
+                  className="w-64 rounded-2xl border border-white/70 bg-white/80 p-3 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-white/10"
                 >
                   <div className="flex items-center gap-3 p-2">
-                    <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-white/60 bg-white/70 text-sm font-semibold text-gray-700 dark:border-white/10 dark:bg-white/10 dark:text-gray-200">
+                    <div className="relative grid h-11 w-11 place-items-center overflow-hidden rounded-2xl border border-white/60 bg-white/70 text-sm font-semibold text-gray-700 dark:border-white/10 dark:bg-white/10 dark:text-gray-200">
                       {user.picture ? (
                         <img
                           src={user.picture}
                           alt={user.name || "User"}
                           className="h-full w-full object-cover"
                           referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
                         />
                       ) : (
                         <span>{initials}</span>
                       )}
+                      <span className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/60 dark:ring-white/10" />
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        {user.name || "Traveler"}
-                      </div>
-                      <div className="truncate text-xs text-gray-600 dark:text-gray-300">
-                        {user.email}
-                      </div>
+                      <div className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{user.name || "Traveler"}</div>
+                      <div className="truncate text-xs text-gray-600 dark:text-gray-300">{user.email}</div>
                     </div>
                   </div>
                   <div className="mt-2 grid gap-1 p-1">
                     <Link
                       to="/my-trips"
-                      className="rounded-md px-2 py-1.5 text-sm text-gray-700 transition hover:bg-white hover:text-gray-900 dark:text-gray-200 dark:hover:bg-white/10"
+                      className="rounded-md px-2 py-1.5 text-sm text-gray-700 transition hover:bg-white hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:text-gray-200 dark:hover:bg-white/10"
                     >
                       My Trips
                     </Link>
                     <button
-                      className="rounded-md px-2 py-1.5 text-left text-sm text-red-600 transition hover:bg-red-50 dark:hover:bg-red-500/10"
+                      className="rounded-md px-2 py-1.5 text-left text-sm text-red-600 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 dark:hover:bg-red-500/10"
                       onClick={() => {
                         googleLogout();
                         localStorage.removeItem("user");
@@ -199,7 +226,6 @@ function Header() {
                     <DialogTitle className="sr-only">Sign in</DialogTitle>
                     <DialogDescription asChild>
                       <div className="flex flex-col gap-0">
-                        {/* Header strip */}
                         <div className="flex items-center justify-between gap-3 rounded-t-2xl border-b border-white/60 bg-gradient-to-r from-[#fff7f6] to-white px-5 py-4 dark:from-white/5 dark:to-white/10">
                           <div className="flex items-center gap-3">
                             <img src="/logo.svg" alt="" className="h-9 w-9" />
@@ -210,7 +236,6 @@ function Header() {
                           </div>
                         </div>
 
-                        {/* Content */}
                         <div className="px-5 py-4">
                           <p className="text-sm text-gray-600 dark:text-gray-300">
                             Sign in to sync your trips across devices and unlock smart suggestions.
@@ -233,38 +258,20 @@ function Header() {
 
                           <div className="my-4 flex items-center gap-3">
                             <span className="h-px flex-1 bg-gray-200 dark:bg-white/20" />
-                            <span className="text-[11px] uppercase tracking-wider text-gray-400">
-                              Continue with
-                            </span>
+                            <span className="text-[11px] uppercase tracking-wider text-gray-400">Continue with</span>
                             <span className="h-px flex-1 bg-gray-200 dark:bg-white/20" />
                           </div>
 
                           <Button
                             disabled={isBusy}
                             onClick={() => login()}
-                            className="flex w-full items-center justify-center gap-3 border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 dark:border-white/20 dark:bg-white/10 dark:text-gray-100"
+                            className="flex w-full items-center justify-center gap-3 border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:border-white/20 dark:bg-white/10 dark:text-gray-100"
                           >
                             {isBusy ? (
                               <span className="flex items-center gap-2">
-                                <svg
-                                  className="h-4 w-4 animate-spin"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                >
-                                  <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                  />
-                                  <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                                  />
+                                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                                 </svg>
                                 Signing in…
                               </span>
@@ -284,10 +291,7 @@ function Header() {
 
                           <div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
                             <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                              By continuing, you agree to our{" "}
-                              <a href="/terms" className="underline underline-offset-2">Terms</a>{" "}
-                              and{" "}
-                              <a href="/privacy" className="underline underline-offset-2">Privacy Policy</a>.
+                              By continuing, you agree to our <a href="/terms" className="underline underline-offset-2">Terms</a> and <a href="/privacy" className="underline underline-offset-2">Privacy Policy</a>.
                             </p>
                           </div>
                         </div>
@@ -303,5 +307,3 @@ function Header() {
     </header>
   );
 }
-
-export default Header;
